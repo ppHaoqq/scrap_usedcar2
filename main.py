@@ -4,6 +4,35 @@ from bs4 import BeautifulSoup as bs
 import pandas as pd
 import math
 
+
+#ページスクロール
+def get_num(soup):
+    center_nav_block = soup.find('div', class_='centernavblock')
+    _total_record = center_nav_block.find('span', class_='totalrecord').text
+    if ',' in _total_record:
+        total_record = int(_total_record.replace(',', ''))
+        num = math.ceil(total_record / len(outer_details))
+        return num
+    else:
+        total_record = math.ceil(int(_total_record))
+        num = math.ceil(total_record / len(outer_details))
+        return num
+
+
+def get_df(items):
+    df = pd.DataFrame()
+
+    df['id'] = items[0]
+    df['years'] = items[1]
+    df['grades'] = items[2]
+    df['mileages'] = items[3]
+    df['base_prices'] = items[4]
+    df['total_prices'] = items[5]
+
+    return df
+
+
+
 kw = input('車種を入力してください>>')  # 'RX-8'
 base_url = 'https://www.goo-net.com/cgi-bin/fsearch/goo_used_search.cgi?category=USDN&phrase={}&query={}'.format(kw, kw)
 html = requests.get(base_url).text
@@ -51,28 +80,6 @@ for i in range(num):
 df = get_df(items)
 
 
-#ページスクロール
-def get_num(soup):
-    center_nav_block = soup.find('div', class_='centernavblock')
-    _total_record = center_nav_block.find('span', class_='totalrecord').text
-    if ',' in _total_record:
-        total_record = int(_total_record.replace(',', ''))
-        num = math.ceil(total_record / len(outer_details))
-        return num
-    else:
-        total_record = math.ceil(int(_total_record))
-        num = math.ceil(total_record / len(outer_details))
-        return num
 
 
-def get_df(items):
-    df = pd.DataFrame()
 
-    df['id'] = items[0]
-    df['years'] = items[1]
-    df['grades'] = items[2]
-    df['mileages'] = items[3]
-    df['base_prices'] = items[4]
-    df['total_prices'] = items[5]
-
-    return df
