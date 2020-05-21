@@ -3,12 +3,18 @@ import requests
 from bs4 import BeautifulSoup as bs
 import pandas as pd
 import math
+import pathlib
+import io
+from PIL import Image
+from urllib import request
+import datetime
 
 
 #ページスクロール
 def get_num(soup):
     center_nav_block = soup.find('div', class_='centernavblock')
     _total_record = center_nav_block.find('span', class_='totalrecord').text
+    outer_details = soup.find_all('div', class_='outerDetail')
     if ',' in _total_record:
         total_record = int(_total_record.replace(',', ''))
         num = math.ceil(total_record / len(outer_details))
@@ -52,9 +58,28 @@ for i in range(num):
         kw, kw, i)
     html2 = requests.get(url).text
     soup2 = bs(html2, 'html.parser')
-    outer_details = soup2.find_all('div', class_='outerDetail')
-    for outer_detail in outer_details:
-        img_url = outer_detail.find('img', src='https://')
+
+    #画像保存
+    img_photos = soup2.find_all('div', class_='imgPhoto')
+    for index, img_photo in enumerate(img_photos):
+        img_url = img_photo.find('img', class_='lazy').get('data-src')
+        f = io.BytesIO(request.urlopen(img_url).read())
+        img = Image.open(f)
+        save_dir = pathlib.PurePath.joinpath(pathlib.Path.cwd(), 'img')
+        if not save_dir.exists():
+            save_dir.mkdir()
+        car_dir = pathlib.PurePath.joinpath(save_dir, kw)
+        if not car_dir.exists():
+            car_dir.mkdir()
+        save_path = pathlib.PurePath.joinpath(car_dir, '{}_{}_{}.jpg'.format(kw, i+1, index+1))
+        if not save_path.exists():
+            img.save(save_path)
+        else:
+            pass
+
+
+    outer_details2 = soup2.find_all('div', class_='outerDetail')
+    for outer_detail in outer_details2:
 
         text_detail = outer_detail.find('div', class_='textDetail')
         bottom_detail = text_detail.find('div', class_='bottomDetail')
@@ -78,8 +103,12 @@ for i in range(num):
         total_prices.append(total_price)
 
 df = get_df(items)
-
-
-
-
-
+date = datetime.datetime.now().strftime('%m-%d')
+csv_dir = pathlib.PurePath.joinpath(pathlib.Path.cwd(), 'data')
+if not csv_dir.exists():
+    csv_dir.mkdir()
+csv_path = pathlib.PurePath.joinpath(csv_dir, '{}_{}.csv'.format(date, kw))
+if not csv_path.exists():
+    df.to_csv(csv_path)
+else:
+    pass
